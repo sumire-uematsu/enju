@@ -18,6 +18,8 @@ eval_coverage <- [pred].
 'eval_coverage/3' <- [eval_coverage, 'pred/3'].
 'eval_coverage/4' <- ['eval_coverage/3', 'pred/4'].
 
+set_sentence_limit <- [pred].
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- module_implementation.
@@ -47,6 +49,7 @@ eval_coverage <- [pred].
 '*num_uw_sc*' <- [variable].
 '*num_uw_uc*' <- [variable].
 
+'*sentence_words_limit*' <- [variable].
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 deriv_to_lexlist <- [pred].
@@ -127,7 +130,8 @@ eval_coverage_sentence($Iter, $Output, $Err) :-
      fail),
 
     length($LexList, $NumWords),
-    ($NumWords <= 40 ->
+    get_variable('*sentence_words_limit*', $SentLimit),
+    ($NumWords <= $SentLimit ->
      true ;
      format($Output, "No. ~d: too long sentence: ~d words\n", [$DerivID, $NumWords]),
      inc_variable('*num_too_long_sentences*')),
@@ -183,6 +187,9 @@ eval_coverage_init($DerivbankFileName, $LexiconFileName, $TempFileName2) :-
     init_integer_variable('*num_uw_sc*'),
     init_integer_variable('*num_uw_uc*'),
 
+    get_variable('*sentence_words_limit*', $SentLimit),
+    ($SentLimit <= 0 -> set_sentence_limit(40); true),
+
     %import_lexicon($LexiconFileName, $TempFileName2),
     import_lexicon($LexiconFileName),
     import_templates($TempFileName2),
@@ -233,6 +240,11 @@ eval_coverage_term($Output, _) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+:- init_integer_variable('*sentence_words_limit*').
+
+set_sentence_limit($Value) :-
+    set_variable('*sentence_words_limit*', $Value).
+
 eval_coverage($DerivbankFile, $LexiconFile, $TemplateFile2) :-
     stdout_stream($Output),
     stderr_stream($Err),
@@ -249,4 +261,3 @@ eval_coverage($DerivbankFile, $LexiconFile, $TemplateFile2, $OutFile) :-
     eval_coverage_term($Output, $Err),
     close($Err),
     close($Output).
-
